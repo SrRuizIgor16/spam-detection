@@ -27,7 +27,7 @@ class DataPreprocessing:
     COLUMNS_TO_DROP = ['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4']
     COLUMN_NAMES = ['IsSpam', 'Message']
 
-    def __init__(self, data_path=DATA_PATH, plot_path=PLOT_PATH, encoding='latin1'):
+    def __init__(self, data_path=DATA_PATH, plot_path=PLOT_PATH, encoding='latin1', language='english'):
         """
         Initializes the DataPreprocessing class by loading the data and downloading necessary NLTK resources.
 
@@ -39,18 +39,30 @@ class DataPreprocessing:
             Directory where the plots will be saved.
         encoding : str
             Encoding format for reading the CSV file.
+        language : str
+            The language for stopwords.
+        data : DataFrame
+            The loaded raw data.
+        raw_data : DataFrame
+            A copy of the raw data.
         """
+
         self.data_path = data_path
         self.plot_path = plot_path
         self.data = self.load_data(encoding)
         self.raw_data = self.data.copy() if self.data is not None else None
-        nltk.download('punkt')
-        nltk.download('stopwords')
+        self.language = language
+
+        '''Add this to the __init__ method to download the necessary NLTK resources. Only needs to be run once.'''
+        # nltk.download('punkt')
+        # nltk.download('stopwords')
 
     def __str__(self):
+        '''Return a string representation of the class.'''
         return 'DataPreprocessing class'
 
     def __repr__(self):
+        '''Return a string representation of the class.'''
         return 'DataPreprocessing class'
 
     def load_data(self, encoding):
@@ -75,7 +87,7 @@ class DataPreprocessing:
             print('Error loading data:', e)
             return None
 
-    def preprocess_data(self):
+    def preprocess_data(self, save=False):
         """
         Preprocesses the data by dropping unnecessary columns, renaming columns, filling missing values, and mapping labels.
         """
@@ -85,8 +97,32 @@ class DataPreprocessing:
             self.fill_na('IsSpam', 0)
             self.drop_na()
             self.data['IsSpam'] = self.data['IsSpam'].map({'ham': 0, 'spam': 1})
+            if save:
+                self.save_data(self.clean_to_save(self.data))
         else:
             print('Data not loaded. Cannot preprocess data.')
+
+    def clean_to_save(self, data):
+        """
+        Cleans the text data by removing stopwords adding to a new column. This is used before saving the data to a CSV file.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The data containing messages.
+
+        Returns
+        -------
+        The DataFrame that has been cleaned
+        """
+        if data is not None:
+            data['Cleaned_Message'] = data['Message'].apply(lambda row: ' '
+                                        .join([word for word in word_tokenize(row)
+                                               if word.isalpha() and word not in stopwords.words(self.language)]))
+            return data
+        else:
+            print('Data not loaded. Cannot clean text.')
+            return []
 
     def drop_columns(self, columns):
         """
@@ -129,18 +165,20 @@ class DataPreprocessing:
         """
         self.data.dropna(inplace=True)
 
-    def save_data(self, path=PROCESSED_DATA_PATH):
+    def save_data(self, data, path=PROCESSED_DATA_PATH):
         """
         Saves the preprocessed data to a CSV file.
 
         Parameters
         ----------
+        data : DataFrame
+            The data to save.
         path : str
             The path where the processed data will be saved.
         """
-        if self.data is not None:
+        if data is not None:
             try:
-                self.data.to_csv(path, index=False)
+                data.to_csv(path, index=False)
                 print('Data saved successfully')
             except Exception as e:
                 print('Error saving data:', e)
@@ -303,15 +341,46 @@ class DataPreprocessing:
         self.word_frequency(data, 0)
         self.word_frequency(data, 1)
 
+def plot_data():
+    """
+    Loads the data and generates and saves all relevant plots.
+
+    Returns
+    -------
+    DataPreprocessing
+        The DataPreprocessing object.
+    """
+    dp = DataPreprocessing()
+    if dp.data is not None:
+        dp.preprocess_data(save=False)
+        dp.plots(dp.data)
+        return dp
+    else:
+        print('Data not loaded. Cannot plot data.')
+
+
+def scd():
+    # def save_cleaned_data():
+    """
+    Loads the data, preprocesses it, and saves the cleaned data to a CSV file.
+
+    Returns
+    -------
+    DataPreprocessing
+        The DataPreprocessing object.
+    """
+    dp = DataPreprocessing()
+    if dp.data is not None:
+        dp.preprocess_data(save=True)
+        return dp
+    else:
+        print('Data not loaded. Cannot save cleaned data.')
+
 def main():
-    """
-    Main function to execute the data preprocessing and plotting.
-    """
-    data_preprocessing = DataPreprocessing()
-    if data_preprocessing.data is not None:
-        data_preprocessing.preprocess_data()
-        data_preprocessing.save_data()
-        data_preprocessing.plots(data_preprocessing.data)
+    """The main function that calls the save_cleaned_data and plot_data functions."""
+    scd()
+    # plot_data()
+
 
 if __name__ == '__main__':
     main()
