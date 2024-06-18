@@ -1,6 +1,7 @@
 # Spam Emails Detection
 
 This project is a machine learning application that classifies emails as either spam or not spam.
+The dataset used in this project was taken from https://www.kaggle.com/uciml/sms-spam-collection-dataset
 
 ## Getting Started
 
