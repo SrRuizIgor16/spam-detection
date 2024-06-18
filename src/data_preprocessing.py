@@ -157,7 +157,10 @@ class DataPreprocessing:
         value : any
             The value to fill missing entries with.
         """
-        self.data[column].fillna(value, inplace=True)
+        try:
+            self.data[column].fillna(value, inplace=True)
+        except FutureWarning:
+            pass
 
     def drop_na(self):
         """
@@ -185,7 +188,7 @@ class DataPreprocessing:
         else:
             print('Data not loaded. Cannot save data.')
 
-    def save_plot(self, title):
+    def save_plot(self, title, path=PLOT_PATH):
         """
         Saves the current plot with a given title.
 
@@ -193,9 +196,11 @@ class DataPreprocessing:
         ----------
         title : str
             The title of the plot (used as the filename).
+        path : str
+            The directory where the plot will be saved.
         """
         try:
-            plt.savefig(self.plot_path + title + '.png')
+            plt.savefig(path + title + '.png')
             print(f'Plot "{title}" saved successfully')
         except Exception as e:
             print(f'Error saving plot "{title}":', e)
@@ -359,28 +364,8 @@ def plot_data():
         print('Data not loaded. Cannot plot data.')
 
 
-def scd():
-    # def save_cleaned_data():
-    """
-    Loads the data, preprocesses it, and saves the cleaned data to a CSV file.
-
-    Returns
-    -------
-    DataPreprocessing
-        The DataPreprocessing object.
-    """
-    dp = DataPreprocessing()
-    if dp.data is not None:
-        dp.preprocess_data(save=True)
-        return dp
-    else:
-        print('Data not loaded. Cannot save cleaned data.')
-
 def main():
-    """The main function that calls the save_cleaned_data and plot_data functions."""
-    scd()
-    # plot_data()
-
+    pass
 
 if __name__ == '__main__':
     main()

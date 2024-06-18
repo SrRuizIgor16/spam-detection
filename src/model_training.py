@@ -1,61 +1,66 @@
 import re
-from nltk.corpus import stopwords
+import nltk
+from nltk.corpus import stopwords as nltk_stopwords
 from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
-from model import Model
 
-class ModelTraining(Model):
-	def __init__(self, config, pattern='[^a-zA-Z]', repl=' ', stopwords=stopwords.words('english'), max_features=1500,
-	             test_size=0.2, random_state=0, epochs=1, batch_size=10):
-		Model.__init__(self, config, self.path)
-		self.pattern = pattern
-		self.repl = repl
-		self.stopwords = stopwords
-		self.max_features = max_features
-		self.test_size = test_size
-		self.random_state = random_state
-		self.epochs = epochs
-		self.batch_size = batch_size
-		self.accuracy = None
-		self.ps = PorterStemmer()
+class ModelTraining:
+    download_stopwords = False
 
-	def clean_data(self, data, column_name='Cleaned_Message'):
-		corpus = []
-		for i in range(0, len(data)):
-			review = re.sub(pattern=self.pattern, repl=self.repl, string=data[column_name][i])
-			review = review.lower()
-			review = [self.ps.stem(word) for word in review.split() if not word in set(self.stopwords)]
-			review = ' '.join(review)
-			corpus.append(review)
-		return corpus
+    def __init__(self, pattern='[^a-zA-Z]', repl=' ', stopwords=None, max_features=1500,
+                 test_size=0.2, random_state=0):
+        self.download_stopwords()
+        self.pattern = pattern
+        self.repl = repl
+        self.stopwords = stopwords if stopwords is not None else set(nltk_stopwords.words('english'))
+        self.max_features = max_features
+        self.test_size = test_size
+        self.random_state = random_state
+        self.ps = PorterStemmer()
 
-	def vectorize_data(self, data, corpus=None, column=0, column_name='Cleaned_Message'):
-		cv = CountVectorizer(max_features=self.max_features)
-		if not corpus:
-			corpus = self.clean_data(data, column_name=column_name)
-		X = cv.fit_transform(corpus).toarray()
-		y = data.iloc[:, column].values
-		return X, y
 
-	def split_data(self, X, y):
-		return train_test_split(X, y, test_size=self.test_size, random_state=self.random_state)
+    def download_stopwords(self):
+        if not ModelTraining.download_stopwords:
+            nltk.download('stopwords')
+            ModelTraining.download_stopwords = True
 
-	def pre_train(self, data, corpus=None, column=0,):
-		X, y = self.vectorize_data(data, corpus, column)
-		X_train, X_test, y_train, y_test = self.split_data(X, y)
-		return X_train, X_test, y_train, y_test
+    def clean_data(self, data, column_name='Cleaned_Message'):
+        corpus = []
+        for i in range(len(data)):
+            review = re.sub(self.pattern, self.repl, data[column_name][i])
+            review = review.lower()
+            review = [self.ps.stem(word) for word in review.split() if word not in self.stopwords]
+            review = ' '.join(review)
+            corpus.append(review)
+        return corpus
 
-	def train(self, data, corpus=None, column=0):
-		X_train, X_test, y_train, y_test = self.pre_train(data, corpus, column)
-		self.model.fit(X_train, y_train, epochs=self.epochs, batch_size=self.batch_size)
-		cm, acc = self.evaluate(X_test, y_test)
-		self.accuracy = acc
-		return cm, acc
+    def vectorize_data(self, corpus):
+        cv = CountVectorizer(max_features=self.max_features)
+        X = cv.fit_transform(corpus).toarray()
+        return X
 
-	def clean_predict(self, predict):
-		review = re.sub(pattern=self.pattern, repl=self.repl, string=predict)
-		review = review.lower()
-		review = [self.ps.stem(word) for word in review.split() if not word in set(self.stopwords)]
-		review = ' '.join(review)
-		return review
+    def split_data(self, X, y):
+        return train_test_split(X, y, test_size=self.test_size, random_state=self.random_state)
+
+    def pre_train(self, data, split=True, column=0, column_name='Cleaned_Message'):
+        corpus = self.clean_data(data, column_name)
+        X = self.vectorize_data(corpus)
+        y = data.iloc[:, column].values
+        if split:
+            return self.split_data(X, y)
+        else:
+            return X, y
+
+    def clean_predict(self, predict):
+        review = re.sub(pattern=self.pattern, repl=self.repl, string=predict)
+        review = review.lower()
+        review = [self.ps.stem(word) for word in review.split() if word not in self.stopwords]
+        review = ' '.join(review)
+        return review
+
+def main():
+    pass
+
+if __name__ == '__main__':
+    main()

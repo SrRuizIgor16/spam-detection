@@ -1,0 +1,30 @@
+MultinomialNB:
+Accuracy: 0.9829596412556054
+Trained: True
+Training Date: 2024-06-18 14:04:34.770797
+;
+GaussianNB:
+Accuracy: 0.8215246636771301
+Trained: True
+Training Date: 2024-06-18 14:04:39.100375
+;
+SVC:
+Accuracy: 0.9775784753363229
+Trained: True
+Training Date: 2024-06-18 14:04:53.527937
+;
+LogisticRegression:
+Accuracy: 0.979372197309417
+Trained: True
+Training Date: 2024-06-18 14:04:56.762520
+;
+RandomForestClassifier:
+Accuracy: 0.9802690582959641
+Trained: True
+Training Date: 2024-06-18 14:05:11.898455
+;
+DecisionTreeClassifier:
+Accuracy: 0.9766816143497757
+Trained: True
+Training Date: 2024-06-18 14:06:44.196181
+;
