@@ -1,93 +1,127 @@
-import pandas as pd
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-
-from model import Model, load_model
-from data_preprocessing import DataPreprocessing
+import utils
 from evaluation import compare_models
 
-def save_cleaned_data(save=False):
+def prediction(model, to_predict):
     """
-    Loads the data, preprocesses it, and saves the cleaned data to a CSV file.
+    Makes a prediction using the specified model.
+
+    Parameters
+    ----------
+    model : Model
+        The trained model to use for prediction.
+    to_predict : str
+        The text message to predict.
 
     Returns
     -------
-    DataPreprocessing
-        The DataPreprocessing object.
+    int
+        The prediction result (1 for spam, 0 for not spam).
     """
-    dp = DataPreprocessing()
-    if dp.data is not None:
-        dp.preprocess_data(save=save)
-        return dp
+    model_instance = model
+    cleaned_data = model_instance.train.clean_predict(to_predict)
+    vectorized_data = model_instance.vectorizer.transform([cleaned_data]).toarray()
+    prediction = model_instance.predict(vectorized_data)
+    return prediction[0]
+
+def print_text(models):
+    """
+    Prints a list of models to choose from.
+
+    Parameters
+    ----------
+    models : list
+        List of model names.
+    """
+    text = '''Select the number of the model to predict:\n--------------------------------'''
+    for i, model in enumerate(models):
+        text += f'\n\t {i + 1}- {model}'
+    text += f'\n\t {len(models) + 1}- Completed\n'
+    text += '\n--------------------------------\n'
+    print(text)
+
+def select_model(models_info, models):
+    """
+    Selects a model for prediction.
+
+    Parameters
+    ----------
+    models_info : dict
+        Dictionary containing model information.
+    models : dict
+        Dictionary containing model instances.
+
+    Returns
+    -------
+    int
+        The prediction result (1 for spam, 0 for not spam).
+    """
+    print_text(models_info)
+    model = int(input()) - 1
+
+    if model < 0 or model > len(models_info):
+        print('Invalid model. Please try again.')
+        return select_model(models_info, models)
+    elif model == len(models_info):
+        print('Enter a message to predict: ')
+        message = input().strip()
+        predictions = 0
+        total_accuracy = sum([model.accuracy for model in models.values()])
+
+        for model_name in list(models_info.keys()):
+            model = models[model_name]
+            a = prediction(model, message)
+            predictions += a * (model.accuracy / total_accuracy)
+
+        if predictions >= 0.49:
+            return 1
+        else:
+            return 0
     else:
-        print('Data not loaded. Cannot save cleaned data.')
-        return None
+        model_name = list(models_info.keys())[model]
+        model = models[model_name]
+        print(f'You selected {model}')
+        print('Enter a message to predict: ')
+        message = input().strip()
+        print(f'Predicting with {model}...')
+        return prediction(model, message)
 
-def create_model(train_dp, model=None, path='../models/'):
-    model_instance = Model(path=path, model=model)
-    model_instance.train_model(train_dp.data, column_name='Message')
-    model_instance.save_model(name=f'{model.__class__.__name__}.pkl')
-    return model_instance
+def set_up():
+    """
+    Sets up the models for prediction.
 
-def get_model(model):
-    path = f'../models/{model.__class__.__name__}.pkl'
-    return load_model(path)
-
-def obtain_models(key_models, dp=None, evaluate=True):
-    models = {}
-    for key_model in key_models:
-        try:
-            model = get_model(key_model)
-        except FileNotFoundError:
-            print(f'{key_model.__class__.__name__} model not found')
-            if dp is None:
-                dp = save_cleaned_data()
-                if dp is None:
-                    print('Failed to preprocess data. Exiting.')
-                    return
-            model = create_model(dp, model=key_model)
-            print(f'{key_model.__class__.__name__} model created')
-
-        info = {'Accuracy': model.accuracy,
-                'Trained': model.trained,
-                'Training Date': model.training_date}
-        models[key_model.__class__.__name__] = info
-
-        if evaluate:
-            eval_model(model, dp)
-
-    return models
-
-def print_models(models):
-    for model_name, info in models.items():
-        print(f'{model_name}:')
-        for key, value in info.items():
-            print(f'{key}: {value}')
-
-def eval_model(model, dp=None):
-    if dp is None:
-        dp = save_cleaned_data()
-        if dp is None:
-            print('Failed to preprocess data. Exiting.')
-            return
-    X, y = model.train.pre_train(dp.data, split=False, column_name='Message')
-    print(f'Evaluating {model.__str__()}')
-    model.evaluate()
-    x = model.evaluation.evaluation_metric(X, y, save_plots=True, show_plots=False)
-    if x:
-        print(f'{model.__str__()} evaluation completed successfully')
-    else:
-        print(f'{model.__str__()} evaluation failed')
-
-
-def main():
+    Returns
+    -------
+    tuple
+        Dictionary of model information and dictionary of model instances.
+    """
     key_models = [MultinomialNB(), GaussianNB(), SVC(), LogisticRegression(), RandomForestClassifier(),
                   DecisionTreeClassifier()]
-    models = obtain_models(key_models, evaluate=False)
-    compare_models(models, save_plots=True, view_plots=False)
+    models_info, models = utils.obtain_models(key_models, evaluate=False)
+    compare_models(models_info, save_plots=True, view_plots=False)
+    return models_info, models
+
+def main():
+    """
+    Main function to run the prediction program.
+    """
+    models_info, models = set_up()
+    print('Models set up.\n')
+    next = True
+    while next:
+        print('Starting prediction...')
+        if select_model(models_info, models) == 1:
+            prediction = 'spam'
+        else:
+            prediction = 'not spam'
+        print(f'The prediction is: {prediction}\n\nThank you for using this program! :')
+        print('Do you want to predict another message? (y/n)')
+        if input().lower() != 'y':
+            next = False
 
 if __name__ == '__main__':
     main()

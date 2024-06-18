@@ -46,16 +46,15 @@ class DataPreprocessing:
         raw_data : DataFrame
             A copy of the raw data.
         """
-
         self.data_path = data_path
         self.plot_path = plot_path
         self.data = self.load_data(encoding)
         self.raw_data = self.data.copy() if self.data is not None else None
         self.language = language
 
-        '''Add this to the __init__ method to download the necessary NLTK resources. Only needs to be run once.'''
-        # nltk.download('punkt')
-        # nltk.download('stopwords')
+        # Download necessary NLTK resources
+        nltk.download('punkt')
+        nltk.download('stopwords')
 
     def __str__(self):
         '''Return a string representation of the class.'''
@@ -113,7 +112,8 @@ class DataPreprocessing:
 
         Returns
         -------
-        The DataFrame that has been cleaned
+        DataFrame
+            The DataFrame that has been cleaned.
         """
         if data is not None:
             data['Cleaned_Message'] = data['Message'].apply(lambda row: ' '
@@ -362,7 +362,6 @@ def plot_data():
         return dp
     else:
         print('Data not loaded. Cannot plot data.')
-
 
 def main():
     pass
