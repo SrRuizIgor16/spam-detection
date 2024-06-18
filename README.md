@@ -50,6 +50,10 @@ Run the main script:
 
 - SrRuizIgor16
 
+## Contributing
+
+Contributions are welcome! Please fork this repository and submit a pull request for any feature or bug fix.
+
 ## License
 
 This project is licensed under the MIT License.
